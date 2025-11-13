@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: fogo-flame-predictor
+    env: static
+    buildCommand: ""
+    staticPublishPath: .
