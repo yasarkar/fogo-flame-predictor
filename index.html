@@ -7,12 +7,14 @@
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    body { font-family: Arial; background: #000; color: #fff; text-align: center; margin: 0; padding: 20px; }
-    #chart { width: 100%; max-width: 500px; height: 300px; margin: 20px auto; background: #111; border-radius: 12px; }
-    button { padding: 15px 30px; margin: 10px; font-size: 20px; border: none; border-radius: 12px; cursor: pointer; }
-    #up { background: #0f0; } #down { background: #f33; }
-    #info { font-size: 18px; margin: 10px; }
-    input { padding: 10px; width: 200px; margin: 10px; }
+    body {font-family: Arial;background:#000;color:#fff;text-align:center;margin:0;padding:20px;}
+    h1 {color:#ff3300;}
+    input, select, button {padding:12px;margin:8px;font-size:18px;border-radius:12px;border:none;}
+    button {cursor:pointer;}
+    #up {background:#0f0;color:#000;}
+    #down {background:#f33;}
+    #chart {width:100%;max-width:500px;height:300px;margin:20px auto;background:#111;border-radius:12px;}
+    #info {font-size:20px;margin:15px;}
   </style>
 </head>
 <body>
@@ -20,6 +22,7 @@
   <input id="username" placeholder="Username" />
   <input id="solana" placeholder="Solana Adres" />
   <button onclick="start()">BAŞLA</button>
+
   <div id="game" style="display:none;">
     <select id="pair">
       <option>SOL-USDT</option>
@@ -30,66 +33,58 @@
     <button id="up">YUKARI</button>
     <button id="down">AŞAĞI</button>
     <div id="timer">10</div>
-    <div id="info">Taş: <span id="gems">0</span> | Kalan: <span id="attempts">10</span></div>
+    <div id="info">Taş: <span id="gems">0</span> | Kalan Deneme: <span id="attempts">10</span></div>
   </div>
 
   <script>
-    const socket = io('wss://fogo-predictor.senincontaboip.com'); // ADIM 5'te IP'yi yaz
-    let chart, series, username, solana, currentPair = 'sol';
-    const pairs = { 'SOL-USDT': 'solana', 'BTC-USDT': 'bitcoin', 'ETH-USDT': 'ethereum' };
+    const socket = io('wss://BURAYA_CONTABO_IP:3000'); // ADIM 7'de IP'yi yaz
+    let chart, series, username, solana, currentPair = 'solana';
+    const pairs = {'SOL-USDT':'solana','BTC-USDT':'bitcoin','ETH-USDT':'ethereum'};
 
     function start() {
       username = document.getElementById('username').value.trim();
       solana = document.getElementById('solana').value.trim();
       if (!username || !solana) return alert("Username ve Solana adresi gir!");
       document.getElementById('game').style.display = 'block';
-      socket.emit('join', { username, solana });
+      socket.emit('join', {username, solana});
     }
 
-    socket.on('init', data => {
-      document.getElementById('gems').innerText = data.gems;
-      document.getElementById('attempts').innerText = data.attempts;
+    socket.on('init', d => {
+      document.getElementById('gems').innerText = d.gems;
+      document.getElementById('attempts').innerText = d.attempts;
     });
 
     socket.on('price', data => {
       if (!chart) {
-        chart = LightweightCharts.createChart(document.getElementById('chart'), { width: 500, height: 300 });
+        chart = LightweightCharts.createChart(document.getElementById('chart'), {width:500,height:300});
         series = chart.addCandlestickSeries();
       }
       series.setData(data.history);
-      document.getElementById('timer').innerText = '10';
-      startCountdown();
+      startTimer();
     });
 
-    function startCountdown() {
-      let time = 10;
-      const interval = setInterval(() => {
-        time--;
-        document.getElementById('timer').innerText = time;
-        if (time <= 0) clearInterval(interval);
-      }, 1000);
+    function startTimer() {
+      let t=10;
+      const iv=setInterval(()=>{document.getElementById('timer').innerText=--t; if(t<=0)clearInterval(iv);},1000);
     }
 
-    document.getElementById('up').onclick = () => predict('up');
-    document.getElementById('down').onclick = () => predict('down');
     document.getElementById('pair').onchange = () => {
       currentPair = pairs[document.getElementById('pair').value];
       socket.emit('changePair', currentPair);
     };
 
+    document.getElementById('up').onclick = () => predict('up');
+    document.getElementById('down').onclick = () => predict('down');
+
     function predict(dir) {
       if (document.getElementById('timer').innerText != '0') return;
-      socket.emit('predict', { pair: currentPair, dir, username });
+      socket.emit('predict', {pair: currentPair, dir, username});
     }
 
-    socket.on('result', res => {
-      document.getElementById('gems').innerText = res.gems;
-      document.getElementById('attempts').innerText = res.attempts;
-      alert(res.correct ? "DOĞRU! +1 Taş" : "YANLIŞ!");
-    });
-
-    socket.on('leaderboard', lb => {
-      console.log('LB güncellendi', lb);
+    socket.on('result', r => {
+      document.getElementById('gems').innerText = r.gems;
+      document.getElementById('attempts').innerText = r.attempts;
+      alert(r.correct ? "DOĞRU! +1 Taş" : "YANLIŞ!");
     });
   </script>
 </body>
